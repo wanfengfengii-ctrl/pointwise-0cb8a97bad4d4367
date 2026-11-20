@@ -11,6 +11,13 @@ def initialize_piece_store(db: sqlite3.Connection) -> None:
             PRIMARY KEY (revision_id, entry)
         )
     ''')
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS range_pieces (
+            revision_id TEXT PRIMARY KEY NOT NULL REFERENCES observation_revisions (revision_id),
+            piece_id TEXT NOT NULL UNIQUE,
+            encoded BLOB NOT NULL
+        )
+    ''')
 
 
 def find_issued_piece(db: sqlite3.Connection, revision_id: str, entry: str) -> bytes | None:
@@ -32,6 +39,33 @@ def save_or_get_issued_piece(
             (revision_id, entry, piece_id, encoded),
         )
         fixed = find_issued_piece(db, revision_id, entry)
+        if fixed is None:
+            raise RuntimeError('issued station piece was not stored')
+        db.commit()
+    except BaseException:
+        db.rollback()
+        raise
+    return fixed
+
+
+def find_issued_range_piece(db: sqlite3.Connection, revision_id: str) -> bytes | None:
+    row = db.execute(
+        'SELECT encoded FROM range_pieces WHERE revision_id = ?', (revision_id,)
+    ).fetchone()
+    return row[0] if row is not None else None
+
+
+def save_or_get_issued_range_piece(
+    db: sqlite3.Connection, revision_id: str, piece_id: str, encoded: bytes
+) -> bytes:
+    db.execute('BEGIN IMMEDIATE')
+    try:
+        db.execute(
+            'INSERT INTO range_pieces (revision_id, piece_id, encoded) VALUES (?, ?, ?) '
+            'ON CONFLICT (revision_id) DO NOTHING',
+            (revision_id, piece_id, encoded),
+        )
+        fixed = find_issued_range_piece(db, revision_id)
         if fixed is None:
             raise RuntimeError('issued station piece was not stored')
         db.commit()
