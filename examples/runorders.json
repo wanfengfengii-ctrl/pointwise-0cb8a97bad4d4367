@@ -1,0 +1,24 @@
+[
+  {
+    "case_id": "T5",
+    "batch": "LQ-SAFE-01",
+    "segments": [["front", ["p1"]], ["rear", ["r1"]]],
+    "calibration": ["1", "0"],
+    "stop_limit": "5",
+    "front_entry": "1",
+    "rear_entry_if_stopped": "1",
+    "expected": {"stop_beat": null, "exit_load": "4"},
+    "oracle": "单位倍率和零修正。前段 1+1=2，后段 2+2=4，两拍均低于 5。"
+  },
+  {
+    "case_id": "T6.front_stop",
+    "batch": "LQ-STOP-01",
+    "segments": [["front", ["p1"]], ["rear", ["r1"]]],
+    "calibration": ["1", "0"],
+    "stop_limit": "5",
+    "front_entry": "2",
+    "rear_entry_if_stopped": "1",
+    "expected": {"stop_beat": "p1", "exit_load": null},
+    "oracle": "前段 2+3=5，p1 等号停检。后件入口 1 仅供出处留档。"
+  }
+]
